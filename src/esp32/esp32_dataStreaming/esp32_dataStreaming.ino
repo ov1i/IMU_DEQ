@@ -2,13 +2,13 @@
 #include "ThingSpeak.h"
 
 // Wi-Fi credentials
-const char* ssid = "SSID";
-const char* password = "PSWD";
+const char* ssid = "DIGI_eb21f8";
+const char* password = "ddcc14de";
 
 // ThingSpeak credentials
 WiFiClient client;
-unsigned long CH_no = CH_NO; // Replace with your channel number
-const char* API_key = "API_KEY";    // Replace with your Write API Key
+unsigned long CH_no = 1; // Replace with your channel number
+const char* API_key = "JEH8FKT2X136NWDP";    // Replace with your Write API Key
 
 void setup() {
   Serial.begin(115200);
@@ -40,5 +40,5 @@ void loop() {
     Serial.println(statusCode);
   }
 
-  delay(20000); // Wait 20 seconds (minimum ThingSpeak update interval is 15 seconds)
+  delay(15000); 
 }
