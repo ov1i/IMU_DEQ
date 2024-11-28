@@ -3,19 +3,16 @@
 #include <Arduino.h>
 #include <Firebase_ESP_Client.h>
 #include <addons/RTDBHelper.h>
-#include "MPU9250.h"
 
 const char* ssid = "DIGI_eb21f8";
 const char* password = "ddcc14de";
 
 #define FIREBASE_HOST "https://projectiot-ee562-default-rtdb.europe-west1.firebasedatabase.app/"
-#define FIREBASE_SECRET "UnJ5jFpZhqC2gRhkxKPBcZyhokwk5JFZmWeJ7kn3"   
+#define FIREBASE_SECRET "UnJ5jFpZhqC2gRhkxKPBcZyhokwk5JFZmWeJ7kn3"
 
 FirebaseData firebaseData;
 FirebaseAuth auth;
 FirebaseConfig config;
-
-MPU9250 imu;
 
 void setup() {
   Serial.begin(115200);
@@ -25,7 +22,7 @@ void setup() {
 
   // Cloud api connection init
   Serial.print("Connecting to Wi-Fi");
-  
+
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(500);
@@ -40,79 +37,57 @@ void setup() {
   config.signer.tokens.legacy_token = FIREBASE_SECRET;
 
   Firebase.reconnectNetwork(true);
-  firebaseData.setBSSLBufferSize(4096 /* Rx buffer size: [ 512 - 16384 ] bytes */ , 1024 /* Tx buffer size: [ 512 - 16384 ] bytes */);
+  firebaseData.setBSSLBufferSize(4096 /* Rx buffer size: [ 512 - 16384 ] bytes */, 1024 /* Tx buffer size: [ 512 - 16384 ] bytes */);
   Firebase.begin(&config, &auth);
   // Firebase.begin(DATABASE_URL, DATABASE_SECRET); // LEGACY Connection
-  
-
-  // IMU init
-  Wire.begin(14, 15);
-  Serial.println("Initializing MPU9250...");
-  imu.setup(0x68);
-  delay(3000);
-
-  // Calibrate accelerometer and gyroscope
-  Serial.println("Calibration of GYRO and ACCELEROMETER started please DO NOT move the device...");
-  // imu.calibrateAccelGyro();
-  Serial.println("Calibration of the GYRO and ACCELEROMETER complete!");
 
   delay(3000);
-
-  // Calibrate magnetometer
-  Serial.println("Calibration of the magnetometer started please move the sensor in all directions...");
-  // imu.calibrateMag();
-  Serial.println("Magnetometer calibration complete!");
-
-
-  Serial.println("Calibration offsets: ");
-  Serial.print("Accel Bias X: "); Serial.println(imu.getAccBiasX());
-  Serial.print("Accel Bias Y: "); Serial.println(imu.getAccBiasY());
-  Serial.print("Accel Bias Z: "); Serial.println(imu.getAccBiasZ());
-
-  Serial.print("Gyro Bias X: "); Serial.println(imu.getGyroBiasX());
-  Serial.print("Gyro Bias Y: "); Serial.println(imu.getGyroBiasY());
-  Serial.print("Gyro Bias Z: "); Serial.println(imu.getGyroBiasZ());
-
-  Serial.print("Mag Bias X: "); Serial.println(imu.getMagBiasX());
-  Serial.print("Mag Bias Y: "); Serial.println(imu.getMagBiasY());
-  Serial.print("Mag Bias Z: "); Serial.println(imu.getMagBiasZ());
 }
 
 void loop() {
-  float yaw, pitch, roll;
+  float yaw, pitch, roll, temp;
 
-  if(imu.update()) {
-    float yawData = imu.getYaw();    // In degrees
-    float pitchData = imu.getPitch(); // In degrees
-    float rollData = imu.getRoll();   // In degrees
+  yaw = random(1, 10);
+  pitch = random(10, 20);
+  roll = random(20, 30);
+  temp = random(30, 40);
 
-    Serial.print("Yaw: "); Serial.print(yawData);
-    Serial.print(" | Pitch: "); Serial.print(pitchData);
-    Serial.print(" | Roll: "); Serial.println(rollData);
-    
-    if (Firebase.RTDB.setFloat(&firebaseData, "/SensorData/Yaw", yawData)) {
-      Serial.println("Yaw data sent to Firebase!");
-    } else {
-      Serial.print("Failed to send Yaw. Reason: ");
-      Serial.println(firebaseData.errorReason());
-    }
+  Serial.print("Yaw: ");
+  Serial.print(yaw);
+  Serial.print(" | Pitch: ");
+  Serial.print(pitch);
+  Serial.print(" | Roll: ");
+  Serial.println(roll);
+  Serial.print(" | Temp: "); Serial.println(temp);
 
-    if (Firebase.RTDB.setFloat(&firebaseData, "/SensorData/Pitch", pitchData)) {
-      Serial.println("Pitch data sent to Firebase!");
-    } else {
-      Serial.print("Failed to send Pitch. Reason: ");
-      Serial.println(firebaseData.errorReason());
-    }
-
-    if (Firebase.RTDB.setFloat(&firebaseData, "/SensorData/Roll", rollData)) {
-      Serial.println("Roll data sent to Firebase!");
-    } else {
-      Serial.print("Failed to send Roll. Reason: ");
-      Serial.println(firebaseData.errorReason());
-    }
+  if (Firebase.RTDB.setFloat(&firebaseData, "/SensorData/Yaw", yaw)) {
+    Serial.println("Yaw data sent to Firebase!");
+  } else {
+    Serial.print("Failed to send Yaw. Reason: ");
+    Serial.println(firebaseData.errorReason());
   }
+
+  if (Firebase.RTDB.setFloat(&firebaseData, "/SensorData/Pitch", pitch)) {
+    Serial.println("Pitch data sent to Firebase!");
+  } else {
+    Serial.print("Failed to send Pitch. Reason: ");
+    Serial.println(firebaseData.errorReason());
+  }
+
+  if (Firebase.RTDB.setFloat(&firebaseData, "/SensorData/Roll", roll)) {
+    Serial.println("Roll data sent to Firebase!");
+  } else {
+    Serial.print("Failed to send Roll. Reason: ");
+    Serial.println(firebaseData.errorReason());
+  }
+
+  if (Firebase.RTDB.setFloat(&firebaseData, "/SensorData/Temp", temp)) {
+    Serial.println("Temp data sent to Firebase!");
+  } else {
+    Serial.print("Failed to send Temp. Reason: ");
+    Serial.println(firebaseData.errorReason());
+  }
+
 
   delay(1000);
 }
-
-
