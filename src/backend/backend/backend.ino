@@ -73,7 +73,7 @@ void publishData();
 void setup() {
   Serial.begin(115200);
   Serial.flush();
-  while (!Serial) {}
+  while (!Serial) {;}
 
   WiFi.begin(ssid, password);
   // Cloud api connection init
