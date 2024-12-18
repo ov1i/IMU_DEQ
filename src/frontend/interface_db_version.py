@@ -3,15 +3,9 @@ import numpy as np
 import math
 import firebase_admin
 from firebase_admin import credentials, db
-import serial
-import threading
 
 # Firebase setup
 cred = credentials.Certificate('key.json')
-try:
-    sHandler = serial.Serial('com4',115200)
-except Exception as e:
-    print(e)
 
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://projectiot-ee562-default-rtdb.europe-west1.firebasedatabase.app/'
@@ -30,24 +24,41 @@ z_axis = arrow(pos = vector(0.051 ,2 ,0), axis=vector(1, 0, 0), opacity=0.5, shi
 x_axis = arrow(pos = vector(0 ,1.95 ,0), axis=vector(0, 1, 0), opacity=0.5, shininess=0.2, color=color.red)
 y_axis = arrow(pos = vector(0 ,2 ,0.051), axis=vector(0, 0, 1), opacity=0.5, shininess=0.2, color=color.blue)
 
-# Arms
-arm_length = 2
-arm_thickness = 0.1
-arm1 = box(pos=vector(0, 0, 0), size=vector(arm_length, arm_thickness, arm_thickness), color=color.red)
-arm2 = box(pos=vector(0, 0, 0), size=vector(arm_thickness, arm_thickness, arm_length), color=color.green)
+# Arm parameters
+arm_length = 1.2
+arm_thickness = 0.05
 
-# Propellers
+corner_offset = body.size.x / 2
+diagonal_offset = corner_offset / np.sqrt(2) # Offset for 45-degree diagonal placement
+
+# Arms positioned diagonally
+arm1 = box(pos=vector(diagonal_offset, 0, diagonal_offset), size=vector(arm_length, arm_thickness, arm_thickness),
+           axis=vector(1, 0, 1), up=vector(0, 1, 0), color=color.red)
+arm2 = box(pos=vector(-diagonal_offset, 0, diagonal_offset), size=vector(arm_length, arm_thickness, arm_thickness),
+           axis=vector(-1, 0, 1), up=vector(0, 1, 0), color=color.green)
+arm3 = box(pos=vector(-diagonal_offset, 0, -diagonal_offset), size=vector(arm_length, arm_thickness, arm_thickness),
+           axis=vector(-1, 0, -1), up=vector(0, 1, 0), color=color.red)
+arm4 = box(pos=vector(diagonal_offset, 0, -diagonal_offset), size=vector(arm_length, arm_thickness, arm_thickness),
+           axis=vector(1, 0, -1), up=vector(0, 1, 0), color=color.green)
+
+# Propeller parameters
 propeller_radius = 0.3
 propeller_thickness = 0.05
 
 # Create propellers at the ends of the arms
-prop1 = cylinder(pos=vector(arm_length/2, 0, 0), axis=vector(0, 0.1, 0), radius=propeller_radius, color=color.red)
-prop2 = cylinder(pos=vector(-arm_length/2, 0, 0), axis=vector(0, 0.1, 0), radius=propeller_radius, color=color.red)
-prop3 = cylinder(pos=vector(0, 0, arm_length/2), axis=vector(0, 0.1, 0), radius=propeller_radius, color=color.green)
-prop4 = cylinder(pos=vector(0, 0, -arm_length/2), axis=vector(0, 0.1, 0), radius=propeller_radius, color=color.green)
+prop1 = cylinder(pos=arm1.pos + arm1.axis / 2, axis=vector(0, 0.1, 0), radius=propeller_radius, color=color.red)
+prop2 = cylinder(pos=arm2.pos + arm2.axis / 2, axis=vector(0, 0.1, 0), radius=propeller_radius, color=color.green)
+prop3 = cylinder(pos=arm3.pos + arm3.axis / 2, axis=vector(0, 0.1, 0), radius=propeller_radius, color=color.red)
+prop4 = cylinder(pos=arm4.pos + arm4.axis / 2, axis=vector(0, 0.1, 0), radius=propeller_radius, color=color.green)
+
+# Update Y position of the propellers
+prop1.pos.y = -0.1 
+prop2.pos.y = -0.1
+prop3.pos.y = -0.1
+prop4.pos.y = -0.1
 
 # Group all components into a single quadcopter object
-quadcopter = compound([body, arm1, arm2, prop1, prop2, prop3, prop4])
+quadcopter = compound([body, arm1, arm2, arm3, arm4, prop1, prop2, prop3, prop4])
 
 scene.camera.pos = vector(3, 2, 5)
 scene.camera.axis = vector(-3, -2, -5)
@@ -83,18 +94,8 @@ def cvtQuat2YPR(q0: float, q1: float, q2: float, q3: float):
 
 def main_loop():
     while True:
-        # while (sHandler.inWaiting()==0):
-        #     pass
-        # dataPacket=sHandler.readline()
-        # dataPacket=str(dataPacket,'utf-8')
-        # splitPacket=dataPacket.split(",")
-        # q0=float(splitPacket[0])
-        # q1=float(splitPacket[1])
-        # q2=float(splitPacket[2])
-        # q3=float(splitPacket[3])
-        
+        ## FETCH DATA FROM FIREBASE REALTIME DB
         q0, q1, q2, q3, temp = fetch_db_data()
-        # print(temp)
         try: 
             yaw, pitch, roll = cvtQuat2YPR(q0, q1, q2, q3)
         except Exception as e:
@@ -110,9 +111,6 @@ def main_loop():
         quadcopter.axis=k
         quadcopter.up=vrot
 
-        # print(yaw, pitch, roll)
-        # print(q0, q1, q2, q3)
-        
         rate(50)  # Animation rate
 
 # Start the animation
