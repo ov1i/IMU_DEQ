@@ -70,7 +70,7 @@ def cvtQuat2YPR(q0: float, q1: float, q2: float, q3: float):
     # Compute roll, pitch, yaw with clamping for pitch
     roll = math.atan2(2 * ((q2 * q3) + (q0 * q1)), q0**2 - q1**2 - q2**2 + q3**2)
     pitch = math.asin(max(-1, min(1, 2 * ((q1 * q3) - (q0 * q2)))))  # Clamp to [-1, 1]
-    yaw = math.atan2(2 * ((q1 * q2) + (q0 * q3)), q0**2 + q1**2 - q2**2 - q3**2)
+    yaw = -math.atan2(2 * ((q1 * q2) + (q0 * q3)), q0**2 + q1**2 - q2**2 - q3**2)
 
     return yaw, pitch, roll
 
